@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
-import { MercadoPagoConfig, Payment } from 'mercadopago';
+import { MercadoPagoConfig } from 'mercadopago';
 import { prisma } from '@/lib/prisma';
 
 const client = new MercadoPagoConfig({ accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN ?? '' });
@@ -109,4 +109,3 @@ export async function GET(request: Request) {
   }
 }
 
-export { processOrder };
