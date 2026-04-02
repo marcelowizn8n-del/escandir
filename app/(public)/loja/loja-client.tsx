@@ -315,7 +315,7 @@ export default function LojaClient({ books }: { books: Book[] }) {
                           className="w-full py-3 bg-gold text-navy font-semibold rounded-lg hover:bg-gold-light transition-all shadow-md disabled:opacity-50 flex items-center justify-center gap-2"
                         >
                           {loadingPayment ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
-                          Pagar com Stripe
+                          Pagar com Mercado Pago
                         </button>
                       </motion.div>
                     )}

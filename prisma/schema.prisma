@@ -1,7 +1,7 @@
 generator client {
     provider = "prisma-client-js"
     binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
-    output = "/home/ubuntu/poeta_website/nextjs_space/node_modules/.prisma/client"
+    output = "../node_modules/.prisma/client"
 }
 
 datasource db {
@@ -119,6 +119,8 @@ model Order {
   status          String      @default("pending")
   stripeSessionId String?     @unique
   stripePaymentId String?
+  mpPreferenceId  String?
+  mpPaymentId     String?
   items           OrderItem[]
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt

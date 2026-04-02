@@ -1,9 +1,9 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
-import Stripe from 'stripe';
+import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { prisma } from '@/lib/prisma';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '', { apiVersion: '2024-06-20' as any });
+const client = new MercadoPagoConfig({ accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN ?? '' });
 
 export async function POST(request: Request) {
   try {
@@ -32,32 +32,30 @@ export async function POST(request: Request) {
 
     // Calculate totals
     let subtotal = 0;
-    const lineItems: any[] = [];
+    const mpItems: any[] = [];
 
     for (const item of items ?? []) {
       const book = books?.find((b: any) => b?.id === item?.bookId);
       if (!book) continue;
       const qty = item?.quantity ?? 1;
       subtotal += (book?.price ?? 0) * qty;
-      lineItems.push({
-        price_data: {
-          currency: 'brl',
-          product_data: { name: book?.title ?? 'Livro' },
-          unit_amount: Math.round((book?.price ?? 0) * 100),
-        },
+      mpItems.push({
+        id: book?.id,
+        title: book?.title ?? 'Livro',
         quantity: qty,
+        unit_price: book?.price ?? 0,
+        currency_id: 'BRL',
       });
     }
 
-    // Add shipping as line item
+    // Add shipping as item
     const shippingCost = Number(shipping?.price ?? 0);
-    lineItems.push({
-      price_data: {
-        currency: 'brl',
-        product_data: { name: `Frete ${shipping?.name ?? ''}` },
-        unit_amount: Math.round(shippingCost * 100),
-      },
+    mpItems.push({
+      id: 'shipping',
+      title: `Frete ${shipping?.name ?? ''}`,
       quantity: 1,
+      unit_price: shippingCost,
+      currency_id: 'BRL',
     });
 
     const total = subtotal + shippingCost;
@@ -93,24 +91,33 @@ export async function POST(request: Request) {
       },
     });
 
-    // Create Stripe session
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: lineItems,
-      mode: 'payment',
-      success_url: `${origin}/loja/sucesso?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/loja/cancelado`,
-      customer_email: customer?.email ?? '',
-      metadata: { orderId: order?.id ?? '' },
+    // Create Mercado Pago preference
+    const preference = new Preference(client);
+    const result = await preference.create({
+      body: {
+        items: mpItems,
+        payer: {
+          name: customer?.name ?? '',
+          email: customer?.email ?? '',
+        },
+        back_urls: {
+          success: `${origin}/loja/sucesso?order_id=${order?.id}`,
+          failure: `${origin}/loja/cancelado`,
+          pending: `${origin}/loja/sucesso?order_id=${order?.id}&status=pending`,
+        },
+        auto_return: 'approved',
+        external_reference: order?.id ?? '',
+        notification_url: `${origin}/api/checkout/webhook`,
+      },
     });
 
-    // Update order with stripe session
+    // Update order with MP preference id
     await prisma.order.update({
       where: { id: order?.id },
-      data: { stripeSessionId: session?.id ?? '' },
+      data: { mpPreferenceId: result?.id ?? '' },
     });
 
-    return NextResponse.json({ url: session?.url ?? '' });
+    return NextResponse.json({ url: result?.init_point ?? '' });
   } catch (error: any) {
     console.error('Checkout error:', error);
     return NextResponse.json({ error: 'Erro ao processar checkout' }, { status: 500 });
