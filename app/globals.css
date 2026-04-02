@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-navy: #1a365d;
+  --color-gold: #c9a84c;
+  --color-cream: #faf8f3;
+  --color-warm: #f5f0e8;
+  --color-text: #2d3748;
+  --color-muted: #718096;
+}
+
+body {
+  background-color: var(--color-cream);
+  color: var(--color-text);
+}
+
+.font-playfair {
+  font-family: var(--font-playfair), serif;
+}
+
+.font-crimson {
+  font-family: var(--font-crimson), serif;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--color-cream); }
+::-webkit-scrollbar-thumb { background: var(--color-navy); border-radius: 3px; }
+
+/* Poetry text styling */
+.poem-text {
+  font-family: var(--font-crimson), serif;
+  line-height: 1.9;
+  white-space: pre-line;
+}
+
+/* Smooth scroll */
+html { scroll-behavior: smooth; }
+
+/* Audio/Video player custom */
+audio::-webkit-media-controls-panel,
+video::-webkit-media-controls-panel {
+  background: #f5f0e8;
+}
