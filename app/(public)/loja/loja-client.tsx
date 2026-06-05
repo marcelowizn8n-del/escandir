@@ -162,7 +162,7 @@ export default function LojaClient({ books }: { books: Book[] }) {
                   )}
                   <div className="flex-1">
                     <h3 className="font-playfair text-2xl text-navy mb-3">{book?.title}</h3>
-                    <p className="font-crimson text-navy/60 mb-4 leading-relaxed">{book?.description}</p>
+                    <p className="font-crimson text-navy/60 mb-4 leading-relaxed line-clamp-3">{book?.description}</p>
                     <p className="text-2xl font-bold text-gold mb-2">R$ {book?.price?.toFixed?.(2) ?? '0.00'}</p>
                     <p className="text-sm text-navy/40 mb-4">
                       {(book?.stock ?? 0) > 0 ? `${book?.stock} em estoque` : 'Indisponível'}

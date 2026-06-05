@@ -7,7 +7,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import {
   Feather, ArrowLeft, Plus, Edit, Trash2, Eye, EyeOff, Star, StarOff,
-  Upload, Loader2, ImageIcon, Volume2, Video, Save, X, Wand2
+  Upload, Loader2, ImageIcon, Volume2, Video, Save, X
 } from 'lucide-react';
 
 interface Poem {
@@ -34,9 +34,7 @@ export default function AdminPoemasPage() {
   const [editingPoem, setEditingPoem] = useState<Poem | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [genImage, setGenImage] = useState(false);
-  const [genImageError, setGenImageError] = useState('');
-  const [imageDirection, setImageDirection] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingAudio, setUploadingAudio] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [form, setForm] = useState({
@@ -68,8 +66,6 @@ export default function AdminPoemasPage() {
   const openNew = () => {
     setEditingPoem(null);
     setForm({ title: '', text: '', audioUrl: null, audioKey: null, videoUrl: null, videoKey: null, imageUrl: null, imageKey: null, published: false, featured: false, order: poems?.length ?? 0 });
-    setImageDirection('');
-    setGenImageError('');
     setShowForm(true);
   };
 
@@ -83,8 +79,6 @@ export default function AdminPoemasPage() {
       published: poem?.published ?? false, featured: poem?.featured ?? false,
       order: poem?.order ?? 0,
     });
-    setImageDirection('');
-    setGenImageError('');
     setShowForm(true);
   };
 
@@ -131,9 +125,10 @@ export default function AdminPoemasPage() {
     } catch (e: any) { console.error(e); }
   };
 
-  const uploadFile = async (file: File, type: 'audio' | 'video') => {
+  const uploadFile = async (file: File, type: 'audio' | 'video' | 'image') => {
     if (type === 'audio') setUploadingAudio(true);
-    else setUploadingVideo(true);
+    else if (type === 'video') setUploadingVideo(true);
+    else setUploadingImage(true);
     try {
       const presignRes = await fetch('/api/upload/presigned', {
         method: 'POST',
@@ -157,40 +152,15 @@ export default function AdminPoemasPage() {
 
       if (type === 'audio') {
         setForm((p: any) => ({ ...(p ?? {}), audioUrl: url, audioKey: cloud_storage_path }));
-      } else {
+      } else if (type === 'video') {
         setForm((p: any) => ({ ...(p ?? {}), videoUrl: url, videoKey: cloud_storage_path }));
+      } else {
+        setForm((p: any) => ({ ...(p ?? {}), imageUrl: url, imageKey: cloud_storage_path }));
       }
     } catch (e: any) { console.error(e); }
     if (type === 'audio') setUploadingAudio(false);
-    else setUploadingVideo(false);
-  };
-
-  const generateAIImage = async () => {
-    if (!form?.text) return;
-    setGenImage(true);
-    setGenImageError('');
-    try {
-      const res = await fetch('/api/generate-image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          poemText: form?.text,
-          poemTitle: form?.title,
-          customDirection: imageDirection || undefined,
-        }),
-      });
-      const data = await res.json();
-      if (data?.imageUrl) {
-        setForm((p: any) => ({ ...(p ?? {}), imageUrl: data.imageUrl, imageKey: null }));
-        setGenImageError('');
-      } else {
-        setGenImageError(data?.error ?? 'Erro ao gerar imagem. Tente novamente.');
-      }
-    } catch (e: any) {
-      console.error(e);
-      setGenImageError('Erro de conexão. Tente novamente.');
-    }
-    setGenImage(false);
+    else if (type === 'video') setUploadingVideo(false);
+    else setUploadingImage(false);
   };
 
   if (!mounted || status === 'loading') {
@@ -303,26 +273,20 @@ export default function AdminPoemasPage() {
                   )}
                   <div className="space-y-2">
                     <div>
-                      <label className="block text-xs text-navy/50 mb-1">Direcionamento (opcional) — descreva o que você quer ver na imagem</label>
+                      <label className="block text-xs text-navy/50 mb-1">URL da imagem (cole o link da imagem hospedada na sua VPS)</label>
                       <input
                         type="text"
-                        value={imageDirection}
-                        onChange={(e: any) => setImageDirection(e?.target?.value ?? '')}
-                        placeholder="Ex: um homem idoso caminhando em um jardim, paisagem do sertão nordestino..."
-                        className="w-full px-3 py-2 rounded-lg border border-navy/10 focus:border-purple-400 focus:ring-1 focus:ring-purple-400 outline-none text-sm text-navy"
+                        value={form?.imageUrl ?? ''}
+                        onChange={(e: any) => setForm((p: any) => ({ ...(p ?? {}), imageUrl: e?.target?.value || null, imageKey: null }))}
+                        placeholder="https://seu-dominio.com/imagens/poema.jpg"
+                        className="w-full px-3 py-2 rounded-lg border border-navy/10 focus:border-gold focus:ring-1 focus:ring-gold outline-none text-sm text-navy"
                       />
                     </div>
-                    <button
-                      onClick={generateAIImage}
-                      disabled={genImage || !form?.text}
-                      className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-lg hover:from-purple-600 hover:to-indigo-600 transition-all disabled:opacity-50 text-sm"
-                    >
-                      {genImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
-                      {genImage ? 'Gerando imagem... (pode levar alguns segundos)' : 'Gerar Imagem com IA'}
-                    </button>
-                    {genImageError && (
-                      <p className="text-sm text-red-500 mt-1">{genImageError}</p>
-                    )}
+                    <label className="flex items-center gap-2 px-4 py-2.5 bg-navy/5 text-navy rounded-lg hover:bg-navy/10 transition-all cursor-pointer text-sm w-fit">
+                      {uploadingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
+                      {uploadingImage ? 'Enviando...' : 'Upload de Imagem'}
+                      <input type="file" accept="image/*" className="hidden" onChange={(e: any) => { const f = e?.target?.files?.[0]; if (f) uploadFile(f, 'image'); }} />
+                    </label>
                   </div>
                 </div>
 

@@ -20,7 +20,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="pt-BR" className={`${inter.variable} ${playfair.variable} ${crimson.variable}`}>
       <head>
-        <script src="https://apps.abacus.ai/chatllm/appllm-lib.js" />
         <style dangerouslySetInnerHTML={{ __html: '[data-hydration-error] { display: none !important; }' }} />
       </head>
       <body className={`${inter.className} antialiased`}>
