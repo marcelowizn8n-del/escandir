@@ -35,6 +35,9 @@ Thumbs.db
 prisma/*.db
 prisma/*.db-journal
 
+# uploads (arquivos enviados pelo admin, salvos no disco da VPS)
+uploads/
+
 # misc
 *.tsbuildinfo
 next-env.d.ts
